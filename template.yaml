@@ -15,15 +15,44 @@ Resources:
   RegisterDeviceFunction:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
     Properties:
-      CodeUri: meteo_pipe/
+      CodeUri: meteo_pipe/register_device/
       Handler: register_device.lambda_handler
-      Runtime: python3.8
+      Layers:
+        - !Ref LibLayer
+      Role: !Ref MeteoPipeAWSIoTRole
       Events:
         HelloWorld:
           Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
           Properties:
-            Path: /hello
-            Method: get
+            Path: /register_device
+            Method: post
+    DependsOn:
+      - !Ref MeteoPipeAWSIoTRole
+      - !Ref LibLayer
+
+  LibLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      LayerName: LibLayer
+      Description: Contatining all necessary libs
+      ContentUri: dependencies/python/
+      RetentionPolicy: Retain
+      CompatibleRuntimes:
+        - python3.8
+    Metadata:
+      BuildMethod: python3.8
+
+  MeteoPipeAWSIoTRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument: Json
+      Description: Role for calling and managing AWS IoT from lambda function
+      ManagedPoliciesArns:
+        - arn:aws:iam::aws:policy/AWSIoTConfigAccess
+      RoleName: MeteoPipeLambdaRoleForAWSIoT
+      Tags:
+        - used-for: meteo-pipe lambda
+
 
 Outputs:
   # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
