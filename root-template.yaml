@@ -1,0 +1,68 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  LambdaFunction
+
+  Sample SAM Template for LambdaFunction
+
+# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Globals:
+  Function:
+    Timeout: 3
+    Runtime: python3.8
+
+Resources:
+  LibLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      LayerName: LibLayer
+      Description: Contatining all necessary libs
+      ContentUri: dependencies/python/
+      RetentionPolicy: Retain
+      CompatibleRuntimes:
+        - python3.8
+    Metadata:
+      BuildMethod: python3.8
+
+  MeteoPipeAWSIoTRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument: Json
+      Description: Role for calling and managing AWS IoT from lambda function
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AWSIoTConfigAccess
+      RoleName: MeteoPipeLambdaRoleForAWSIoT
+      Tags:
+        - Key: "used-for"
+          Value: "meteo-pipe lambda"
+
+  MeteoPipePostAuthRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument: Json
+      Description: Role for creating new user in dynamoDB after auth
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonDynamoDBFullAccessa
+        - arn:aws:iam::aws:policy/AmazonCognitoDeveloperAuthenticatedIdentities
+        - arn:aws:iam::aws:policy/AmazonCognitoPowerUser
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      RoleName: MeteoPipeLambdaRoleForPostAuthorization
+      Tags:
+        - Key: "used-for"
+          Value: "meteo-pipe lambda"
+
+
+
+#Outputs:
+#  # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
+#  # Find out more about other implicit resources you can reference within SAM
+#  # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
+#  HelloWorldApi:
+#    Description: "API Gateway endpoint URL for Prod stage for Hello World function"
+#    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/hello/"
+#  HelloWorldFunction:
+#    Description: "Hello World Lambda Function ARN"
+#    Value: !GetAtt HelloWorldFunction.Arn
+#  HelloWorldFunctionIamRole:
+#    Description: "Implicit IAM Role created for Hello World function"
+#    Value: !GetAtt HelloWorldFunctionRole.Arn

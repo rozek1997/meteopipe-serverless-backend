@@ -1,0 +1,33 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  LambdaFunction
+
+  Sample SAM Template for LambdaFunction
+
+# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Globals:
+  Function:
+    Timeout: 3
+    Runtime: python3.8
+
+Resources:
+  PostRegistrationUserFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: meteo_pipe/auth/postregistration/
+      Handler: register_user.lambda_handler
+      Layers:
+        - !Ref LibLayer
+      Role: !Ref MeteoPipePostAuthRole
+      Environment:
+        Variables:
+          REGION: eu-central-1
+          TABLE_NAME: MeteoPipeUsers
+      Events:
+        HelloWorld:
+          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Properties:
+    DependsOn:
+      - !Ref MeteoPipePostAuthRole
+      - !Ref LibLayer
