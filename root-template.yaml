@@ -27,7 +27,15 @@ Resources:
   MeteoPipeAWSIoTRole:
     Type: AWS::IAM::Role
     Properties:
-      AssumeRolePolicyDocument: Json
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
       Description: Role for calling and managing AWS IoT from lambda function
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AWSIoTConfigAccess
@@ -39,10 +47,18 @@ Resources:
   MeteoPipePostAuthRole:
     Type: AWS::IAM::Role
     Properties:
-      AssumeRolePolicyDocument: Json
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
       Description: Role for creating new user in dynamoDB after auth
       ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/AmazonDynamoDBFullAccessa
+        - arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess
         - arn:aws:iam::aws:policy/AmazonCognitoDeveloperAuthenticatedIdentities
         - arn:aws:iam::aws:policy/AmazonCognitoPowerUser
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole

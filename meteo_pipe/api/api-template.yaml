@@ -12,22 +12,35 @@ Globals:
     Runtime: python3.8
 
 Resources:
-  PostRegistrationUserFunction:
+  RegisterDeviceFunction:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
     Properties:
-      CodeUri: meteo_pipe/auth/postregistration/
-      Handler: register_user.lambda_handler
+      CodeUri: meteo_pipe/register_device/
+      Handler: register_device.lambda_handler
       Layers:
         - !Ref LibLayer
-      Role: !Ref MeteoPipePostAuthRole
-      Environment:
-        Variables:
-          REGION: eu-central-1
-          TABLE_NAME: MeteoPipeUsers
+      Role: !Ref MeteoPipeAWSIoTRole
       Events:
-        HelloWorld:
+        RegiserDeviceAPI:
           Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
           Properties:
+            Path: /register_device
+            Method: post
     DependsOn:
-      - !Ref MeteoPipePostAuthRole
+      - !Ref MeteoPipeAWSIoTRole
       - !Ref LibLayer
+
+
+#Outputs:
+#  # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
+#  # Find out more about other implicit resources you can reference within SAM
+#  # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
+#  HelloWorldApi:
+#    Description: "API Gateway endpoint URL for Prod stage for Hello World function"
+#    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/hello/"
+#  HelloWorldFunction:
+#    Description: "Hello World Lambda Function ARN"
+#    Value: !GetAtt HelloWorldFunction.Arn
+#  HelloWorldFunctionIamRole:
+#    Description: "Implicit IAM Role created for Hello World function"
+#    Value: !GetAtt HelloWorldFunctionRole.Arn

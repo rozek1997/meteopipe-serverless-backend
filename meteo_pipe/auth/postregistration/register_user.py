@@ -15,6 +15,7 @@ def lambda_handler(event, context):
     region = os.environ.get("REGION")
 
     logger.info(event)
+    logger.info(time)
 
     userAttr = event["request"]["userAttributes"]
 
