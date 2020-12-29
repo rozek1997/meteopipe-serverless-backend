@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "triggerSource": "PostConfirmation_ConfirmSignUp",
+  "region": "eu-central-1",
+  "userPoolId": "eu-central-1_dmnlpIx6M",
+  "userName": "0d7f9368-bb8f-495d-b1e5-cb43a769fbe2",
+  "callerContext": {
+    "awsSdk": "",
+    "clientId": "2vjt1p8l6rrf7nopj968188fe7"
+  },
+  "request": {
+    "userAttributes": {
+      "sub": "0d7f9368-bb8f-495d-b1e5-cb43a769fbe2",
+      "cognito:user_status": "CONFIRMED",
+      "email_verified": "true",
+      "cognito:email_alias": "xbox360.rozek@gmail.com",
+      "email": "xbox360.rozek@gmail.com",
+      "name": "Marek"
+    }
+  },
+  "response": {
+  }
+}
