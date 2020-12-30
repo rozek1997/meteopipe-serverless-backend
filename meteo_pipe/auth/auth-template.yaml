@@ -6,7 +6,7 @@ Globals:
   Function:
     Timeout: 3
     Runtime: python3.8
-    Environement:
+    Environment:
       Variables:
         REGION: eu-central-1
 
@@ -14,6 +14,9 @@ Parameters: #section for defining variables which i will referred later on insid
   AppName:
     Type: String
     Default: MeteoPipe
+  IoTParentGroupName:
+    Type: String
+    Default: MeteoPipeDevices
 
 Resources:
   MeteoPipePostRegistrationUserFunction:
@@ -69,6 +72,9 @@ Resources:
             !Sub "${AppName}-LibLambdaLayer:$LATEST" #need to use layer versioning enforce by AWS
       Role:
         Fn::ImportValue: !Sub "${AppName}-AWSIoTCoreRole"
+      Environment:
+        Variables:
+          IoTParentGroupName: !Sub "${IoTParentGroupName}"
 
   MeteoPipePostRegistrationStepFunction:
     Type: AWS::StepFunctions::StateMachine
@@ -85,9 +91,6 @@ Resources:
                 "Resource": "arn:aws:states:::lambda:invoke",
                 "Parameters": {
                   "FunctionName": "${MeteoPipeRegistserUserIntoDynamoDB}",
-                  "Payload": {
-                      "Input.$": "$"
-                  }
                 },
                 "Next": "CreateNewThingGroupForTheUserInAWSIoTCore"
               },

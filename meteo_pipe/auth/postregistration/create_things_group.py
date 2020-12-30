@@ -1,27 +1,25 @@
 import logging
 import os
-import time
 
 import boto3
 
-logging.basicConfig(level=logging.INFO)
+iot_client = boto3.client("iot")
+iot_parent_group_name = os.environ.get("IoTParentGroupName")
 
 
-def lambda_handler(event, context):
+def lambda_handler(event, context, callback):
     logger = logging.getLogger()
-    dynamodb_client = boto3.client("dynamodb")
-    date = time.time()
-    table_name = os.environ.get("TABLE_NAME")
-    region = os.environ.get("REGION")
 
-    logger.info(event)
-    logger.info(time)
+    user_UUID = event["user_UUID"]
 
-    userAttr = event["request"]["userAttributes"]
+    thingGroupProperties = {
+        "thingGroupDescription": "thing group for user devices with uuid {}".format(user_UUID)
+    }
 
-    dynamodb_client.put_item(TableName=table_name, Item={
-        "UID": {"S": event["userName"]},
-        "email": {"S": userAttr["email"]},
-        "name": {"S": userAttr["name"]},
-        # "createdAt": {"S": date}
-    })
+    response = iot_client.create_thing_group(
+        thingGroupName=user_UUID,
+        parentGroupName=iot_parent_group_name,
+        thingGroupProperties=thingGroupProperties
+    )
+
+    callback(None, None)
