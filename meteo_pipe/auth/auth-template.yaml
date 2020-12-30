@@ -6,6 +6,9 @@ Globals:
   Function:
     Timeout: 3
     Runtime: python3.8
+    Environement:
+      Variables:
+        REGION: eu-central-1
 
 Parameters: #section for defining variables which i will referred later on inside this template
   AppName:
@@ -13,20 +16,100 @@ Parameters: #section for defining variables which i will referred later on insid
     Default: MeteoPipe
 
 Resources:
-  PostRegistrationUserFunction:
+  MeteoPipePostRegistrationUserFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: postregistration/
       Handler: register_user.lambda_handler
       Layers:
         - Fn::ImportValue:
-            !Sub "${AppName}-LibLambdaLayer" #need to use layer versioning enforce by AWS
+            !Sub "${AppName}-LibLambdaLayer:$LATEST" #need to use layer versioning enforce by AWS
       Role:
         Fn::ImportValue: !Sub "${AppName}-CognitoPostAuthRole"
       Environment:
         Variables:
-          REGION: eu-central-1
           TABLE_NAME: MeteoPipeUsers
-#    DependsOn:
-#      - arn:aws:iam::045341403599:role/MeteoPipeLambdaRoleForPostAuthorization
-#      - arn:aws:lambda:eu-central-1:045341403599:layer:LibLayer:7
+
+  MeteoPipePostRegistrationStepFunctionInvoker:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: postregistration/
+      Handler: stepfunction_invoker.lambda_handler
+      Layers:
+        - Fn::ImportValue:
+            !Sub "${AppName}-LibLambdaLayer:$LATEST" #need to use layer versioning enforce by AWS
+      Role:
+        Fn::ImportValue: !Sub "${AppName}-StepFunctionExecRole"
+      Environment:
+        Variables:
+          STEP_FUNCTION_ARN: !GetAtt MeteoPipePostRegistrationStepFunction.Arn
+
+
+  MeteoPipePostRegistrationPutUserIntoDynamoDBFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: postregistration/
+      Handler: dynamoDB_user.lambda_handler
+      Layers:
+        - Fn::ImportValue:
+            !Sub "${AppName}-LibLambdaLayer:$LATEST" #need to use layer versioning enforce by AWS
+      Role:
+        Fn::ImportValue: !Sub "${AppName}-CognitoPostAuthRole"
+      Environment:
+        Variables:
+          TABLE_NAME: MeteoPipeUsers
+
+  MeteoPipePostRegistrationCreateUserThingsGroup:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: postregistration/
+      Handler: create_things_group.lambda_handler
+      Layers:
+        - Fn::ImportValue:
+            !Sub "${AppName}-LibLambdaLayer:$LATEST" #need to use layer versioning enforce by AWS
+      Role:
+        Fn::ImportValue: !Sub "${AppName}-AWSIoTCoreRole"
+
+  MeteoPipePostRegistrationStepFunction:
+    Type: AWS::StepFunctions::StateMachine
+    Properties:
+      DefinitionString:
+        !Sub
+        - |- ##what this mean pole mean
+          {
+            "Comment": "State Machine for provisioning new user in MeteoPipe app",
+            "StartAt": "RegisterUserInDynamoDB",
+            "States": {
+              "RegisterUserInDynamoDB": {
+                "Type": "Task",
+                "Resource": "arn:aws:states:::lambda:invoke",
+                "Parameters": {
+                  "FunctionName": "${MeteoPipeRegistserUserIntoDynamoDB}",
+                  "Payload": {
+                      "Input.$": "$"
+                  }
+                },
+                "Next": "CreateNewThingGroupForTheUserInAWSIoTCore"
+              },
+              "CreateNewThingGroupForTheUserInAWSIoTCore": {
+                "Type": "Task",
+                "Resource": "arn:aws:states:::lambda:invoke",
+                "Parameters": {
+                  "FunctionName": "${MeteoPipeRegistserUserIntoDynamoDB}",
+                  "Payload": {
+                      "Input.$": "$"
+                  }
+                },
+                "End": true
+              }
+            }
+          }
+        - {
+          MeteoPipeRegistserUserIntoDynamoDB: !Ref MeteoPipePostRegistrationPutUserIntoDynamoDBFunction,
+          MeteoPipeCreateUserThingsGroup: !Ref MeteoPipePostRegistrationCreateUserThingsGroup
+        }
+      RoleArn:
+        Fn::ImportValue:
+          !Sub "${AppName}-StepFunctionLambdaInvokerRole"
+
+
