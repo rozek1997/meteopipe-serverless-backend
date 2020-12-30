@@ -1,9 +1,6 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: >
-  LambdaFunction
-
-  Sample SAM Template for LambdaFunction
+Description: Root template for deploying serverless stack
 
 # More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
 Globals:
@@ -11,20 +8,26 @@ Globals:
     Timeout: 3
     Runtime: python3.8
 
+Parameters: #section for defining variables which i will referred later on inside this template
+  AppName:
+    Type: String
+    Default: MeteoPipe
+
+
 Resources:
-  LibLayer:
+  MeteoPipeLibLambdaLayer:
     Type: AWS::Serverless::LayerVersion
     Properties:
-      LayerName: LibLayer
-      Description: Contatining all necessary libs
+      LayerName: MeteoPipeLibLambdaLayer
+      Description: Contatining all necessary libs for execution of lambda function
       ContentUri: dependencies/python/
-      RetentionPolicy: Retain
+      RetentionPolicy: Delete
       CompatibleRuntimes:
         - python3.8
     Metadata:
       BuildMethod: python3.8
 
-  MeteoPipeAWSIoTRole:
+  MeteoPipeAWSIoTCoreRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
@@ -44,7 +47,7 @@ Resources:
         - Key: "used-for"
           Value: "meteo-pipe lambda"
 
-  MeteoPipePostAuthRole:
+  MeteoPipeCognitoPostAuthRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
@@ -56,7 +59,7 @@ Resources:
                 - lambda.amazonaws.com
             Action:
               - 'sts:AssumeRole'
-      Description: Role for creating new user in dynamoDB after auth
+      Description: Role for creating new user in dynamoDB after confirming sign-up
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess
         - arn:aws:iam::aws:policy/AmazonCognitoDeveloperAuthenticatedIdentities
@@ -67,18 +70,23 @@ Resources:
         - Key: "used-for"
           Value: "meteo-pipe lambda"
 
+Outputs:
+  MeteoPipeLibLambdaLayer:
+    Description: Library Layer for lambdas used in MeteoPipe app
+    Value: !Ref MeteoPipeLibLambdaLayer #!!!!!!!!!!Ref When the logical ID of this resource is provided to the Ref intrinsic function, it returns the resource ARN of the underlying Lambda LayerVersion.
+    Export:
+      Name: !Sub "${AppName}-LibLambdaLayer"
+
+  MeteoPipeAWSIoTCoreRole:
+    Description: Role for executing code within AWS Iot Core
+    Value: !GetAtt MeteoPipeAWSIoTCoreRole.Arn
+    Export:
+      Name: !Sub "${AppName}-AWSIoTCoreRole"
+
+  MeteoPipeCognitoPostAuthRole:
+    Description: Role to create new user in DynamoDB table after new user sign-up to Cognito user pool
+    Value: !GetAtt MeteoPipeCognitoPostAuthRole.Arn
+    Export:
+      Name: !Sub "${AppName}-CognitoPostAuthRole"
 
 
-#Outputs:
-#  # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
-#  # Find out more about other implicit resources you can reference within SAM
-#  # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
-#  HelloWorldApi:
-#    Description: "API Gateway endpoint URL for Prod stage for Hello World function"
-#    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/hello/"
-#  HelloWorldFunction:
-#    Description: "Hello World Lambda Function ARN"
-#    Value: !GetAtt HelloWorldFunction.Arn
-#  HelloWorldFunctionIamRole:
-#    Description: "Implicit IAM Role created for Hello World function"
-#    Value: !GetAtt HelloWorldFunctionRole.Arn

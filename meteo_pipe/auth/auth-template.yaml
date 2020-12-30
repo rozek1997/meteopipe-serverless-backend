@@ -7,6 +7,11 @@ Globals:
     Timeout: 3
     Runtime: python3.8
 
+Parameters: #section for defining variables which i will referred later on inside this template
+  AppName:
+    Type: String
+    Default: MeteoPipe
+
 Resources:
   PostRegistrationUserFunction:
     Type: AWS::Serverless::Function
@@ -14,8 +19,10 @@ Resources:
       CodeUri: postregistration/
       Handler: register_user.lambda_handler
       Layers:
-        - arn:aws:lambda:eu-central-1:045341403599:layer:LibLayer:7 #need to use layer versioning enforce by AWs
-      Role: arn:aws:iam::045341403599:role/MeteoPipeLambdaRoleForPostAuthorization
+        - Fn::ImportValue:
+            !Sub "${AppName}-LibLambdaLayer" #need to use layer versioning enforce by AWS
+      Role:
+        Fn::ImportValue: !Sub "${AppName}-CognitoPostAuthRole"
       Environment:
         Variables:
           REGION: eu-central-1
