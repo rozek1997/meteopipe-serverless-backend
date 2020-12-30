@@ -21,7 +21,7 @@ Resources:
       LayerName: MeteoPipeLibLambdaLayer
       Description: Contatining all necessary libs for execution of lambda function
       ContentUri: dependencies/python/
-      RetentionPolicy: Delete
+      RetentionPolicy: Retain
       CompatibleRuntimes:
         - python3.8
     Metadata:
@@ -70,6 +70,46 @@ Resources:
         - Key: "used-for"
           Value: "meteo-pipe lambda"
 
+  MeteoPipeStepFunctionLambdaInvokerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Description: Role for run lambda inside step function
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaRole
+      RoleName: MeteoPipeStepFunctionLambdaInvokerRole
+      Tags:
+        - Key: "used-for"
+          Value: "meteo-pipe lambda"
+
+  MeteoPipeStepFunctionExecRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Description: Role for allowing lambdas to run step function
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AWSStepFunctionsFullAccess
+      RoleName: MeteoPipeStepFunctioneExecRole
+      Tags:
+        - Key: "used-for"
+          Value: "meteo-pipe lambda"
+
 Outputs:
   MeteoPipeLibLambdaLayer:
     Description: Library Layer for lambdas used in MeteoPipe app
@@ -89,4 +129,15 @@ Outputs:
     Export:
       Name: !Sub "${AppName}-CognitoPostAuthRole"
 
+  MeteoPipeStepFunctionExecRole:
+    Description: Role to run step function from lambda
+    Value: !GetAtt MeteoPipeStepFunctionExecRole.Arn
+    Export:
+      Name: !Sub "${AppName}-StepFunctionExecRole"
+
+  MeteoPipeStepFunctionLambdaInvokerRole:
+    Description: Role to run and invoke lambas in step function state machine
+    Value: !GetAtt MeteoPipeStepFunctionLambdaInvokerRole.Arn
+    Export:
+      Name: !Sub "${AppName}-StepFunctionLambdaInvokerRole"
 
