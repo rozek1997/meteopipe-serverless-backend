@@ -6,13 +6,12 @@ import boto3
 
 iot_client = boto3.client("iot")
 iot_parent_group_name = os.environ.get("IoTParentGroupName")
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
 
 def lambda_handler(event, context):
-    logger = logging.getLogger()
-
     user_UUID = event["user_UUID"]
-
     thing_group = create_thing_group(user_UUID)
     thing_policy = create_thing_policy(user_UUID)
     print(thing_group)

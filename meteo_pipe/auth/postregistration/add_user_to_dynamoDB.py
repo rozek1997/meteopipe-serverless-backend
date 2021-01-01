@@ -4,13 +4,12 @@ from datetime import datetime
 
 import boto3
 
-logging.basicConfig(level=logging.INFO)
 dynamodb_client = boto3.client("dynamodb")
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
 
 def lambda_handler(event, context):
-    logger = logging.getLogger()
-
     date = datetime.now()
     table_name = os.environ.get("TABLE_NAME")
     region = os.environ.get("REGION")
@@ -28,5 +27,5 @@ def lambda_handler(event, context):
     })
 
     return {
-        "userd_UUID": user_UUID
+        "user_UUID": user_UUID
     }
