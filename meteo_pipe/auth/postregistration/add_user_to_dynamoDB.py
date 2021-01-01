@@ -1,6 +1,6 @@
 import logging
 import os
-import time
+from datetime import datetime
 
 import boto3
 
@@ -8,10 +8,10 @@ logging.basicConfig(level=logging.INFO)
 dynamodb_client = boto3.client("dynamodb")
 
 
-def lambda_handler(event, context, callback):
+def lambda_handler(event, context):
     logger = logging.getLogger()
 
-    date = time.time()
+    date = datetime.now()
     table_name = os.environ.get("TABLE_NAME")
     region = os.environ.get("REGION")
 
@@ -24,7 +24,9 @@ def lambda_handler(event, context, callback):
         "UID": {"S": user_UUID},
         "email": {"S": userAttr["email"]},
         "name": {"S": userAttr["name"]},
-        # "createdAt": {"S": date}
+        "createdAt": {"S": str(date)}
     })
 
-    callback(None, user_UUID)
+    return {
+        "userd_UUID": user_UUID
+    }

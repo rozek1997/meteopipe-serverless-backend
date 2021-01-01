@@ -23,7 +23,5 @@ def lambda_handler(event, context):
         "UID": {"S": event["userName"]},
         "email": {"S": userAttr["email"]},
         "name": {"S": userAttr["name"]},
-        # "createdAt": {"S": date}
+        "createdAt": {"S": str(date)}
     })
-
-    # context.done(None, event)
