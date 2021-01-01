@@ -87,21 +87,15 @@ Resources:
             "States": {
               "RegisterUserInDynamoDB": {
                 "Type": "Task",
-                "Resource": "arn:aws:states:::lambda:invoke",
-                "Parameters": {
-                  "FunctionName": "${MeteoPipeRegistserUserIntoDynamoDB}"
-                },
+                "Resource": "${MeteoPipeRegistserUserIntoDynamoDB}",
+                "InputPath": "$",
+                "ResultPath": "$",
                 "Next": "CreateNewThingGroupForTheUserInAWSIoTCore"
               },
               "CreateNewThingGroupForTheUserInAWSIoTCore": {
                 "Type": "Task",
-                "Resource": "arn:aws:states:::lambda:invoke",
-                "Parameters": {
-                  "FunctionName": "${MeteoPipeRegistserUserIntoDynamoDB}",
-                  "Payload": {
-                      "Input.$": "$"
-                  }
-                },
+                "Resource": "${MeteoPipeCreateUserThingsGroup}",
+                "InputPath": "$",
                 "End": true
               }
             }

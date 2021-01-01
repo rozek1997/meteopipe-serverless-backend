@@ -41,7 +41,7 @@ Resources:
               - 'sts:AssumeRole'
       Description: Role for calling and managing AWS IoT from lambda function
       ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/AWSIoTConfigAccess
+        - arn:aws:iam::aws:policy/AWSIoTFullAccess
       RoleName: MeteoPipeLambdaRoleForAWSIoT
       Tags:
         - Key: "used-for"
@@ -79,7 +79,7 @@ Resources:
           - Effect: Allow
             Principal:
               Service:
-                - lambda.amazonaws.com
+                - states.amazonaws.com
             Action:
               - 'sts:AssumeRole'
       Description: Role for run lambda inside step function
