@@ -33,7 +33,7 @@ def create_thing_group(user_uuid: str):
 
 
 def create_thing_policy(user_uuid: str):
-    policy_name = "meteopipe-user-{}".format(user_uuid)
+    policy_name = "meteopipe-user-policy-{}".format(user_uuid)
 
     policy_document = {
         "Version": "2012-10-17",

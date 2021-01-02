@@ -65,6 +65,7 @@ Resources:
       Description: Role for run lambda inside step function
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaRole
+        - arn:aws:iam::aws:policy/CloudWatchLogsFullAccess
       RoleName: MeteoPipeStepFunctionLambdaInvokerRole
       Tags:
         - Key: "used-for"
@@ -80,12 +81,14 @@ Resources:
             Principal:
               Service:
                 - lambda.amazonaws.com
+                - states.amazonaws.com
             Action:
               - 'sts:AssumeRole'
       Description: Role for creating new user in dynamoDB after confirming sign-up
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess
-      RoleName: MeteoPipeLambdaRoleForPostAuthorization
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      RoleName: MeteoPipeDynamoDBRole
       Tags:
         - Key: "used-for"
           Value: "meteo-pipe lambda"
@@ -100,12 +103,14 @@ Resources:
             Principal:
               Service:
                 - lambda.amazonaws.com
+                - states.amazonaws.com
             Action:
               - 'sts:AssumeRole'
       Description: Role for calling and managing AWS IoT from lambda function
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AWSIoTFullAccess
-      RoleName: MeteoPipeLambdaRoleForAWSIoT
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      RoleName: MeteoPipeAWSIoTCoreRole
       Tags:
         - Key: "used-for"
           Value: "meteo-pipe lambda"
