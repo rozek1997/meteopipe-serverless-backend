@@ -27,7 +27,7 @@ Resources:
     Metadata:
       BuildMethod: python3.8
 
-  MeteoPipeAWSIoTCoreRole:
+  MeteoPipeStepFunctionExecRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
@@ -39,33 +39,13 @@ Resources:
                 - lambda.amazonaws.com
             Action:
               - 'sts:AssumeRole'
-      Description: Role for calling and managing AWS IoT from lambda function
+      Description: Role for allowing lambdas to run step function
       ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/AWSIoTFullAccess
-      RoleName: MeteoPipeLambdaRoleForAWSIoT
-      Tags:
-        - Key: "used-for"
-          Value: "meteo-pipe lambda"
-
-  MeteoPipeCognitoPostAuthRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service:
-                - lambda.amazonaws.com
-            Action:
-              - 'sts:AssumeRole'
-      Description: Role for creating new user in dynamoDB after confirming sign-up
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AWSStepFunctionsFullAccess
         - arn:aws:iam::aws:policy/AmazonCognitoDeveloperAuthenticatedIdentities
         - arn:aws:iam::aws:policy/AmazonCognitoPowerUser
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-      RoleName: MeteoPipeLambdaRoleForPostAuthorization
+      RoleName: MeteoPipeStepFunctioneExecRole
       Tags:
         - Key: "used-for"
           Value: "meteo-pipe lambda"
@@ -90,7 +70,7 @@ Resources:
         - Key: "used-for"
           Value: "meteo-pipe lambda"
 
-  MeteoPipeStepFunctionExecRole:
+  MeteoPipeDynamoDBRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
@@ -102,13 +82,34 @@ Resources:
                 - lambda.amazonaws.com
             Action:
               - 'sts:AssumeRole'
-      Description: Role for allowing lambdas to run step function
+      Description: Role for creating new user in dynamoDB after confirming sign-up
       ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/AWSStepFunctionsFullAccess
-      RoleName: MeteoPipeStepFunctioneExecRole
+        - arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess
+      RoleName: MeteoPipeLambdaRoleForPostAuthorization
       Tags:
         - Key: "used-for"
           Value: "meteo-pipe lambda"
+
+  MeteoPipeAWSIoTCoreRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Description: Role for calling and managing AWS IoT from lambda function
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AWSIoTFullAccess
+      RoleName: MeteoPipeLambdaRoleForAWSIoT
+      Tags:
+        - Key: "used-for"
+          Value: "meteo-pipe lambda"
+
 
 Outputs:
   MeteoPipeLibLambdaLayer:
@@ -116,18 +117,6 @@ Outputs:
     Value: !Ref MeteoPipeLibLambdaLayer #!!!!!!!!!!Ref When the logical ID of this resource is provided to the Ref intrinsic function, it returns the resource ARN of the underlying Lambda LayerVersion.
     Export:
       Name: !Sub "${AppName}-LibLambdaLayer"
-
-  MeteoPipeAWSIoTCoreRole:
-    Description: Role for executing code within AWS Iot Core
-    Value: !GetAtt MeteoPipeAWSIoTCoreRole.Arn
-    Export:
-      Name: !Sub "${AppName}-AWSIoTCoreRole"
-
-  MeteoPipeCognitoPostAuthRole:
-    Description: Role to create new user in DynamoDB table after new user sign-up to Cognito user pool
-    Value: !GetAtt MeteoPipeCognitoPostAuthRole.Arn
-    Export:
-      Name: !Sub "${AppName}-CognitoPostAuthRole"
 
   MeteoPipeStepFunctionExecRole:
     Description: Role to run step function from lambda
@@ -140,4 +129,22 @@ Outputs:
     Value: !GetAtt MeteoPipeStepFunctionLambdaInvokerRole.Arn
     Export:
       Name: !Sub "${AppName}-StepFunctionLambdaInvokerRole"
+
+  MeteoPipeDynamoDBRole:
+    Description: Role to create new user in DynamoDB table after new user sign-up to Cognito user pool
+    Value: !GetAtt MeteoPipeDynamoDBRole.Arn
+    Export:
+      Name: !Sub "${AppName}-DynamoDBRole"
+
+  MeteoPipeAWSIoTCoreRole:
+    Description: Role for executing code within AWS Iot Core
+    Value: !GetAtt MeteoPipeAWSIoTCoreRole.Arn
+    Export:
+      Name: !Sub "${AppName}-AWSIoTCoreRole"
+
+
+
+
+
+
 

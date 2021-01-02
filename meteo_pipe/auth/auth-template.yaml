@@ -19,25 +19,11 @@ Parameters: #section for defining variables which i will referred later on insid
     Default: MeteoPipeDevices
 
 Resources:
-  MeteoPipePostRegistrationUserFunction:
+  MeteoPipeStepFunctionInvoker:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: postregistration/
-      Handler: register_user.lambda_handler
-      Layers:
-        - Fn::ImportValue:
-            !Sub "${AppName}-LibLambdaLayer" #need to use layer versioning enforce by AWS
-      Role:
-        Fn::ImportValue: !Sub "${AppName}-CognitoPostAuthRole"
-      Environment:
-        Variables:
-          TABLE_NAME: MeteoPipeUsers
-
-  MeteoPipePostRegistrationStepFunctionInvoker:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: postregistration/
-      Handler: stepfunction_invoker.lambda_handler
+      Handler: execute_stepfunction.lambda_handler
       Layers:
         - Fn::ImportValue:
             !Sub "${AppName}-LibLambdaLayer" #need to use layer versioning enforce by AWS
@@ -47,22 +33,21 @@ Resources:
         Variables:
           STEP_FUNCTION_ARN: !GetAtt MeteoPipePostRegistrationStepFunction.Arn
 
-
-  MeteoPipePostRegistrationPutUserIntoDynamoDBFunction:
+  MeteoPipeRegisterUserInDynamoDB:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: postregistration/
-      Handler: add_user_to_dynamoDB.lambda_handler
+      Handler: register_user_DynamoDB.lambda_handler
       Layers:
         - Fn::ImportValue:
             !Sub "${AppName}-LibLambdaLayer" #need to use layer versioning enforce by AWS
       Role:
-        Fn::ImportValue: !Sub "${AppName}-CognitoPostAuthRole"
+        Fn::ImportValue: !Sub "${AppName}-DynamoDBRole"
       Environment:
         Variables:
           TABLE_NAME: MeteoPipeUsers
 
-  MeteoPipePostRegistrationCreateUserThingsGroup:
+  MeteoPipeCreateUserThingsGroup:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: postregistration/
@@ -87,7 +72,7 @@ Resources:
             "States": {
               "RegisterUserInDynamoDB": {
                 "Type": "Task",
-                "Resource": "${MeteoPipeRegistserUserIntoDynamoDB}",
+                "Resource": "${MeteoPipeRegistserUserInDynamoDB}",
                 "InputPath": "$",
                 "ResultPath": "$",
                 "Next": "CreateNewThingGroupForTheUserInAWSIoTCore"
@@ -100,8 +85,8 @@ Resources:
               }
             }
           }
-        - MeteoPipeRegistserUserIntoDynamoDB: !GetAtt MeteoPipePostRegistrationPutUserIntoDynamoDBFunction.Arn
-          MeteoPipeCreateUserThingsGroup: !GetAtt MeteoPipePostRegistrationCreateUserThingsGroup.Arn
+        - MeteoPipeRegistserUserInDynamoDB: !GetAtt MeteoPipeRegisterUserInDynamoDB.Arn
+          MeteoPipeCreateUserThingsGroup: !GetAtt MeteoPipeCreateUserThingsGroup.Arn
       RoleArn:
         Fn::ImportValue:
           !Sub "${AppName}-StepFunctionLambdaInvokerRole"
