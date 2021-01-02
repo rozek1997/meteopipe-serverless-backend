@@ -20,7 +20,7 @@ Resources:
     Properties:
       LayerName: MeteoPipeLibLambdaLayer
       Description: Contatining all necessary libs for execution of lambda function
-      ContentUri: dependencies/python/
+      ContentUri: dependencies/
       RetentionPolicy: Retain
       CompatibleRuntimes:
         - python3.8

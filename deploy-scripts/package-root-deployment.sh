@@ -1,7 +1,6 @@
 #!/bin/bash
 
 mkdir "build"
-
 rm -rf ./dependencies/python
 
 pip3 install --target ./dependencies/python -r ./dependencies/requirements.txt

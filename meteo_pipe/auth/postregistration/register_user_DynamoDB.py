@@ -12,7 +12,7 @@ logger.setLevel(logging.INFO)
 def lambda_handler(event, context):
     date = datetime.now()
     table_name = os.environ.get("TABLE_NAME")
-    region = os.environ.get("REGION")
+    # region = os.environ.get("REGION")
 
     logger.info(event)
 
