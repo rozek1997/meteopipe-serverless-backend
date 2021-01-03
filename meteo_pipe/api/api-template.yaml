@@ -14,34 +14,30 @@ Parameters:
     Default: MeteoPipe
   IoTEndpointConnect:
     Type: String
-    Default: !Sub "arn:aws:iot:eu-central-1:045341403599:client/meteopipe-thing/"
+    Default: arn:aws:iot:eu-central-1:045341403599:client/meteopipe-thing/
   IoTEndpointSubscribe:
     Type: String
-    Default: !Sub "arn:aws:iot:eu-central-1:045341403599:topicfilter/meteopipe-thing/"
+    Default: arn:aws:iot:eu-central-1:045341403599:topicfilter/meteopipe-thing/
   IoTEndpointPublish: #publish and receive endpoint are the same
     Type: String
-    Default: !Sub "arn:aws:iot:eu-central-1:045341403599:topic/meteopipe-thing/"
+    Default: arn:aws:iot:eu-central-1:045341403599:topic/meteopipe-thing/
 
 
 Resources:
   RegisterDeviceFunction:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
     Properties:
-      CodeUri: meteo_pipe/register_device/
+      CodeUri: register_device/
       Handler: register_device.lambda_handler
       Layers:
-        Layers:
-          - Fn::ImportValue:
-              !Sub "${AppName}-LibLambdaLayer"
-      Role: !Ref MeteoPipeManagingDeviceRole
+        - Fn::ImportValue:
+            !Sub "${AppName}-LibLambdaLayer"
+      Role: !GetAtt MeteoPipeManagingDeviceRole.Arn
       Environment:
         Variables:
-          - Key: IoTEndpointConnect
-            Value: !Sub "${IoTEndpointConnect}"
-          - Key: IoTEndpointSubscribe
-            Value: !Sub "${IoTEndpointSubscribe}"
-          - Key: IoTEndpointPublish
-            Value: !Sub "${IoTEndpointPublish}"
+          IoTEndpointConnect: !Sub "${IoTEndpointConnect}"
+          IoTEndpointSubscribe: !Sub "${IoTEndpointSubscribe}"
+          IoTEndpointPublish: !Sub "${IoTEndpointPublish}"
 
   MeteoPipeManagingDeviceRole:
     Type: AWS::IAM::Role
@@ -55,12 +51,12 @@ Resources:
                 - lambda.amazonaws.com
             Action:
               - 'sts:AssumeRole'
-        Description: Role for allowing managed IoT devices
-        ManagedPolicyArns:
-          - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-          - arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess
-          - arn:aws:iam::aws:policy/AWSIoTFullAccess
-        RoleName: MeteoPipeStepFunctioneExecRole
-        Tags:
-          - Key: "used-for"
-            Value: "meteo-pipe lambda"
+      Description: Role for allowing managed IoT devices
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess
+        - arn:aws:iam::aws:policy/AWSIoTFullAccess
+      RoleName: MeteoPipeManageDeviceRole
+      Tags:
+        - Key: "used-for"
+          Value: "meteo-pipe lambda"
