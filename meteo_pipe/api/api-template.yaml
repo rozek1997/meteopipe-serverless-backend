@@ -1,15 +1,27 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: >
-  LambdaFunction
-
-  Sample SAM Template for LambdaFunction
+Description: CloudFormation template for provisioning api for meteopipe app
 
 # More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
 Globals:
   Function:
     Timeout: 3
     Runtime: python3.8
+
+Parameters:
+  AppName:
+    Type: String
+    Default: MeteoPipe
+  IoTEndpointConnect:
+    Type: String
+    Default: !Sub "arn:aws:iot:eu-central-1:045341403599:client/meteopipe-thing/"
+  IoTEndpointSubscribe:
+    Type: String
+    Default: !Sub "arn:aws:iot:eu-central-1:045341403599:topicfilter/meteopipe-thing/"
+  IoTEndpointPublish: #publish and receive endpoint are the same
+    Type: String
+    Default: !Sub "arn:aws:iot:eu-central-1:045341403599:topic/meteopipe-thing/"
+
 
 Resources:
   RegisterDeviceFunction:
@@ -18,14 +30,37 @@ Resources:
       CodeUri: meteo_pipe/register_device/
       Handler: register_device.lambda_handler
       Layers:
-        - !Ref LibLayer
-      Role: !Ref MeteoPipeAWSIoTRole
-      Events:
-        RegiserDeviceAPI:
-          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
-          Properties:
-            Path: /register_device
-            Method: post
-    DependsOn:
-      - !Ref MeteoPipeAWSIoTRole
-      - !Ref LibLayer
+        Layers:
+          - Fn::ImportValue:
+              !Sub "${AppName}-LibLambdaLayer"
+      Role: !Ref MeteoPipeManagingDeviceRole
+      Environment:
+        Variables:
+          - Key: IoTEndpointConnect
+            Value: !Sub "${IoTEndpointConnect}"
+          - Key: IoTEndpointSubscribe
+            Value: !Sub "${IoTEndpointSubscribe}"
+          - Key: IoTEndpointPublish
+            Value: !Sub "${IoTEndpointPublish}"
+
+  MeteoPipeManagingDeviceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+        Description: Role for allowing managed IoT devices
+        ManagedPolicyArns:
+          - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+          - arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess
+          - arn:aws:iam::aws:policy/AWSIoTFullAccess
+        RoleName: MeteoPipeStepFunctioneExecRole
+        Tags:
+          - Key: "used-for"
+            Value: "meteo-pipe lambda"

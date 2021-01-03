@@ -14,8 +14,9 @@ def lambda_handler(event, context):
     user_UUID = event["user_UUID"]
     thing_group = create_thing_group(user_UUID)
     thing_policy = create_thing_policy(user_UUID)
-    print(thing_group)
-    print(thing_policy)
+    logger.info(thing_policy)
+    logger.info(thing_group)
+    attach_policy_to_group(thing_group, thing_policy)
 
 
 def create_thing_group(user_uuid: str):
@@ -73,3 +74,13 @@ def create_thing_policy(user_uuid: str):
     )
 
     return response
+
+
+def attach_policy_to_group(thing_group, thing_policy):
+    thing_policy_name = thing_policy["policyName"]
+    thing_group_arn = thing_group["thingGroupArn"]
+
+    iot_client.attach_policy(
+        policyName=thing_policy_name,
+        target=thing_group_arn
+    )
