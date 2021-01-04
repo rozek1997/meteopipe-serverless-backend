@@ -10,6 +10,8 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 iot_client = boto3.client("iot")
 dynamo_client = boto3.client("dynamodb")
+s3_resource = boto3.resource("s3")
+s3_client = boto3.client("s3")
 
 CA_CERT_URL = [
     'https://www.amazontrust.com/repository/AmazonRootCA1.pem',
@@ -26,6 +28,8 @@ CERT_PEM_FILE_TEMPLATE = "{}.cert.pem"
 CA_CERT_FILE_NAME = "root.ca.bundle.pem"
 CONFIG_FILE_NAME = "config.json"
 ZIP_FILE_NAME = "{}-meteopipe.zip"
+S3_BUCKET_NAME = "meteopipe-app"
+S3_CERT_FOLDER = "users_cert/"
 user_uuid = "{}-meteopipe.zip"
 
 endpoints = {
@@ -112,7 +116,7 @@ def define_config_json():
 
     }
 
-    return json.dumps(config)
+    return json.dumps(config, indent=4)  # intend make json look pretty, it like prettify
 
 
 def generate_config_file(config: str):
@@ -130,6 +134,38 @@ def define_thing_endpoint():
     endpoints["connect_endpoint"] = endpoints["connect_endpoint"] + user_uuid + "/${iot:Connection.Thing.ThingName}"
     endpoints["subscribe_endpoint"] = endpoints["subscribe_endpoint"] + user_uuid + "/${iot:Connection.Thing.ThingName}"
     endpoints["publish_endpoint"] = endpoints["publish_endpoint"] + user_uuid + "/${iot:Connection.Thing.ThingName}"
+
+
+def generate_zip_file():
+    logger.info("start generating zip file")
+    zip_name = ZIP_FILE_NAME.format(user_uuid)
+    generated_zip_path = "/tmp/" + zip_name
+    zf = zipfile.ZipFile(generated_zip_path, "w")
+    for dirname, subdirs, files in os.walk(CONFIG_DIR_TEMPLATE):
+        zf.write(dirname)
+        for filename in files:
+            zf.write(os.path.join(dirname, filename))
+    zf.close()
+
+    logger.info("zip for user {} generated".format(user_uuid))
+
+    return generated_zip_path, zip_name
+
+
+def upload_zip_to_s3(zip_path: str, zip_name: str):
+    logger.info("Uploading zip file to s3")
+    s3_resource.meta.client.upload_file(zip_path, S3_BUCKET_NAME, S3_CERT_FOLDER + zip_name)
+    url = s3_client.generate_presigned_url(
+        ClientMethod='get_object',
+        Params={
+            "Bucket": S3_BUCKET_NAME,
+            "Key": S3_CERT_FOLDER + zip_name
+        },
+        ExpiresIn=600
+    )
+
+    logger.info("Url for zip generated: {}".format(url))
+    return url
 
 
 def provision_device(thing_name: str):
@@ -154,42 +190,31 @@ def provision_device(thing_name: str):
         define_thing_endpoint()
         config_template = define_config_json()
         generate_config_file(config_template)
-        generate_zip_file()
+        zip_path, zip_name = generate_zip_file()
+        get_cert_url = upload_zip_to_s3(zip_path, zip_name)
 
         answer["statusCode"] = 200
-        answer['isBase64Encoded']: True
         answer["headers"] = {
-            'Content-Type': 'application/zip, application/octet-stream',
-            'Content-disposition': f"attachment; filename={ZIP_FILE_NAME.format(user_uuid)}",
-            "Content-Encoding": "deflate"
+            'Content-Type': 'application/json'
         }
+        answer["body"] = json.dumps({"get_file_url": get_cert_url})
 
     return answer
 
 
-def generate_zip_file():
-    logger.info("start generating zip file")
-    zf = zipfile.ZipFile("/tmp/" + ZIP_FILE_NAME.format(user_uuid), "w")
-    for dirname, subdirs, files in os.walk(CONFIG_DIR_TEMPLATE):
-        zf.write(dirname)
-        for filename in files:
-            zf.write(os.path.join(dirname, filename))
-    zf.close()
-
-    logger.info("zip for user {} generated".format(user_uuid))
-
-
 def lambda_handler(event, context):
     global user_uuid
-    request_body = event["body"]
+    logger.info(type(event["body"]))
+    request_body = json.loads(event["body"])
     user_uuid = request_body["uuid"]
     thing_name = request_body["thing_name"]
 
     answer = {}
     if user_uuid is None or thing_name is None:
-        answer["statusCode"] = 500
+        answer["statusCode"] = 400
         answer["message"] = "uuid or thing name not provided"
     else:
         answer = provision_device(thing_name)
 
+    logger.info(answer)
     return answer
