@@ -136,6 +136,48 @@ Resources:
         - Key: "used-for"
           Value: "meteo-pipe dynamodb"
 
+  MeteoPipeDynamoDBDeviceStatusTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: "deviceID"
+          AttributeType: "S"
+        - AttributeName: "location"
+          AttributeType: "S"
+      KeySchema:
+        - AttributeName: "deviceID"
+          KeyType: "HASH"
+        - AttributeName: ""
+          KeyType: "RANGE"
+      ProvisionedThroughput:
+        ReadCapacityUnits: "5"
+        WriteCapacityUnits: "5"
+      TableName: "MeteoPipeDeviceStatus"
+      Tags:
+        - Key: "used-for"
+          Value: "meteo-pipe dynamodb"
+
+  MeteoPipeDynamoDBDeviceEventsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: "deviceID"
+          AttributeType: "S"
+        - AttributeName: "timestamp"
+          AttributeType: "N"
+      KeySchema:
+        - AttributeName: "deviceID"
+          KeyType: "HASH"
+        - AttributeName: "timestamp"
+          KeyType: "RANGE"
+      ProvisionedThroughput:
+        ReadCapacityUnits: "5"
+        WriteCapacityUnits: "5"
+      TableName: "MeteoPipeDeviceEventsStatus"
+      Tags:
+        - Key: "used-for"
+          Value: "meteo-pipe dynamodb"
+
 
 Outputs:
   MeteoPipeLibLambdaLayer:
@@ -169,10 +211,22 @@ Outputs:
       Name: !Sub "${AppName}-AWSIoTCoreRole"
 
   MeteoPipeDeviceTable:
-    Description: Role for executing code within AWS Iot Core
+    Description: DynamoDB table for register devices
     Value: !Ref MeteoPipeDynamoDBDeviceTable
     Export:
       Name: !Sub "${AppName}-DeviceTable"
+
+  MeteoPipeDeviceStatusTable:
+    Description: DynamoDB table for Device last status
+    Value: !Ref MeteoPipeDynamoDBDeviceStatusTable
+    Export:
+      Name: !Sub "${AppName}-DeviceStatusTable"
+
+  MeteoPipeDeviceEventsTable:
+    Description: DynamoDB table for Device events history
+    Value: !Ref MeteoPipeDynamoDBDeviceEventsTable
+    Export:
+      Name: !Sub "${AppName}-DeviceEventsTable"
 
 
 
