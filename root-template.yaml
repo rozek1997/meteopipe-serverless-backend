@@ -115,6 +115,27 @@ Resources:
         - Key: "used-for"
           Value: "meteo-pipe lambda"
 
+  MeteoPipeDynamoDBDeviceTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: "deviceID"
+          AttributeType: "S"
+        - AttributeName: "uuid"
+          AttributeType: "S"
+      KeySchema:
+        - AttributeName: "deviceID"
+          KeyType: "HASH"
+        - AttributeName: "uuid"
+          KeyType: "RANGE"
+      ProvisionedThroughput:
+        ReadCapacityUnits: "5"
+        WriteCapacityUnits: "5"
+      TableName: "MeteoPipeDevices"
+      Tags:
+        - Key: "used-for"
+          Value: "meteo-pipe dynamodb"
+
 
 Outputs:
   MeteoPipeLibLambdaLayer:
@@ -146,6 +167,12 @@ Outputs:
     Value: !GetAtt MeteoPipeAWSIoTCoreRole.Arn
     Export:
       Name: !Sub "${AppName}-AWSIoTCoreRole"
+
+  MeteoPipeDeviceTable:
+    Description: Role for executing code within AWS Iot Core
+    Value: !Ref MeteoPipeDynamoDBDeviceTable
+    Export:
+      Name: !Sub "${AppName}-DeviceTable"
 
 
 
