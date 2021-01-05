@@ -12,32 +12,22 @@ Parameters:
   AppName:
     Type: String
     Default: MeteoPipe
-  IoTEndpointConnect:
-    Type: String
-    Default: arn:aws:iot:eu-central-1:045341403599:client/meteopipe-thing/
-  IoTEndpointSubscribe:
-    Type: String
-    Default: arn:aws:iot:eu-central-1:045341403599:topicfilter/meteopipe-thing/
-  IoTEndpointPublish: #publish and receive endpoint are the same
-    Type: String
-    Default: arn:aws:iot:eu-central-1:045341403599:topic/meteopipe-thing/
-
 
 Resources:
   RegisterDeviceFunction:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
     Properties:
-      CodeUri: register_device/
-      Handler: register_device.lambda_handler
+      CodeUri: device/
+      Handler: device.lambda_handler
       Layers:
         - Fn::ImportValue:
             !Sub "${AppName}-LibLambdaLayer"
       Role: !GetAtt MeteoPipeManagingDeviceRole.Arn
       Environment:
         Variables:
-          IoTEndpointConnect: !Sub "${IoTEndpointConnect}"
-          IoTEndpointSubscribe: !Sub "${IoTEndpointSubscribe}"
-          IoTEndpointPublish: !Sub "${IoTEndpointPublish}"
+          DEVICE_TABLE:
+            Fn::ImportValue:
+              !Sub "${AppName}-DeviceTable"
       Events:
         RegisterDevice:
           Type: HttpApi

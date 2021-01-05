@@ -8,8 +8,13 @@ import requests
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
+DEVICE_TABLE_NAME = os.environ.get("DEVICE_TABLE")
+topic = "meteopipe-thing/{uuid}/{ThingName}"
+
 iot_client = boto3.client("iot")
-dynamo_client = boto3.client("dynamodb")
+# dynamo_client = boto3.client("dynamodb")
+dynamodb = boto3.resource("dynamodb")
+DEVICE_TABLE = dynamodb.Table(DEVICE_TABLE_NAME)
 s3_resource = boto3.resource("s3")
 s3_client = boto3.client("s3")
 
@@ -18,7 +23,7 @@ CA_CERT_URL = [
     'https://www.amazontrust.com/repository/AmazonRootCA2.pem',
     'https://www.amazontrust.com/repository/AmazonRootCA3.pem',
     'https://www.amazontrust.com/repository/AmazonRootCA4.pem',
-    'https://www.websecurity.digicert.com/content/dam/websitesecurity/digitalassets/desktop/pdfs/roots/VeriSign-Class%203-Public-Primary-Certification-Authority-G5.pem'
+    'https://www.amazontrust.com/repository/SFSRootCAG2.pem'
 ]
 CONFIG_DIR_TEMPLATE = "/tmp/{}/"
 POLICY_NAME_TEMPLATE = "meteopipe-user-policy-{}"
@@ -32,17 +37,31 @@ S3_BUCKET_NAME = "meteopipe-app"
 S3_CERT_FOLDER = "users_cert/"
 user_uuid = "{}-meteopipe.zip"
 
-endpoints = {
-    "connect_endpoint": os.environ.get("IoTEndpointConnect"),
-    "subscribe_endpoint": os.environ.get("IoTEndpointSubscribe"),
-    "publish_endpoint": os.environ.get("IoTEndpointPublish")
-}
+
+def thing_can_be_provision(thing_name):
+    try:
+        response_iot = iot_client.describe_thing(
+            thingName=thing_name
+        )
+        response_database = DEVICE_TABLE.get_item(
+            Key={
+                "deviceID": thing_name,
+                "uuid-prefix": user_uuid
+            }
+        )
+        if "Item" in response_database or response_iot is not None:
+            raise Exception("Device exist in database")
+    except iot_client.exceptions.ResourceNotFoundException:
+        logger.info("thing {} not found. Can be provisioned".format(thing_name))
 
 
 def create_thing(thing_name: str):
-    thing_name = user_uuid + "-" + thing_name
     thing = iot_client.create_thing(thingName=thing_name)
     return thing
+
+
+def put_thing_to_database():
+    pass
 
 
 def attach_thing_to_thing_group(thing: dict):
@@ -106,9 +125,11 @@ def generate_cert_and_key_files(cert_and_keys: dict):
     return
 
 
-def define_config_json():
+def define_config_json(thing_name: str, endpoint: str):
     config = {
-        "endpoints": endpoints,
+        "clientId": thing_name,
+        "endpoints": endpoint,
+        "topic": topic.format(uuid=user_uuid, ThingName=thing_name),
         "public_key_path": "",
         "private_key_path": "",
         "cert_path": "",
@@ -130,10 +151,8 @@ def generate_config_file(config: str):
 
 
 def define_thing_endpoint():
-    global endpoints
-    endpoints["connect_endpoint"] = endpoints["connect_endpoint"] + user_uuid + "/${iot:Connection.Thing.ThingName}"
-    endpoints["subscribe_endpoint"] = endpoints["subscribe_endpoint"] + user_uuid + "/${iot:Connection.Thing.ThingName}"
-    endpoints["publish_endpoint"] = endpoints["publish_endpoint"] + user_uuid + "/${iot:Connection.Thing.ThingName}"
+    endpoint = iot_client.describe_endpoint(endpointType="iot:Data-ATS")["endpointAddress"]
+    return endpoint
 
 
 def generate_zip_file():
@@ -172,23 +191,25 @@ def provision_device(thing_name: str):
     answer = {}
     logger.info("thing_name: {}, uuid: {}".format(thing_name, user_uuid))
 
+    thing_complete_name = user_uuid + "-" + thing_name  # thing name with user id prefix
     # section of provisioning device
     try:
-        thing = create_thing(thing_name)
+        thing_can_be_provision(thing_complete_name)
+        thing = create_thing(thing_complete_name)
         attach_thing_to_thing_group(thing)
         cert_and_keys = generate_device_cert()
         attach_policy_to_cert(cert_and_keys["certificateArn"])
     except Exception as error:
         logger.error("Cant create thing with thing name {}, error message {}".format(thing_name, error))
-        answer["status"] = "error"
-        answer["message"] = "error creating thing"
+        answer["statusCode"] = 400
+        answer["message"] = str(error)
     else:  # section of preparing answer
         logger.info("creating {} user files for thing {}".format(user_uuid, thing_name))
         create_user_config_dir()
         generate_ca_cert()
         generate_cert_and_key_files(cert_and_keys)
-        define_thing_endpoint()
-        config_template = define_config_json()
+        endpoint_address = define_thing_endpoint()
+        config_template = define_config_json(thing_complete_name, endpoint_address)
         generate_config_file(config_template)
         zip_path, zip_name = generate_zip_file()
         get_cert_url = upload_zip_to_s3(zip_path, zip_name)
