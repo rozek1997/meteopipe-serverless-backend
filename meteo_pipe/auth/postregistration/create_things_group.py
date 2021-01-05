@@ -1,11 +1,9 @@
 import json
 import logging
-import os
 
 import boto3
 
 iot_client = boto3.client("iot")
-iot_parent_group_name = os.environ.get("IoTParentGroupName")
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
@@ -23,10 +21,10 @@ def create_thing_group(user_uuid: str):
     thingGroupProperties = {
         "thingGroupDescription": "thing group for user devices with uuid {}".format(user_uuid)
     }
+    # I refuse to attach group under general group just because there is aws limit for direct child group of 100!!!!
 
     response = iot_client.create_thing_group(
         thingGroupName=user_uuid,
-        parentGroupName=iot_parent_group_name,
         thingGroupProperties=thingGroupProperties
     )
 
