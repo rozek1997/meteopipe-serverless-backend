@@ -18,10 +18,9 @@ Resources:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
     Properties:
       CodeUri: device/
-      Handler: device.lambda_handler
+      Handler: register_device.lambda_handler
       Layers:
-        - Fn::ImportValue:
-            !Sub "${AppName}-LibLambdaLayer"
+        - arn:aws:lambda:eu-central-1:045341403599:layer:MeteoPipeLibLambdaLayer:21
       Role: !GetAtt MeteoPipeManagingDeviceRole.Arn
       Environment:
         Variables:
@@ -35,6 +34,38 @@ Resources:
             ApiId: !Ref MeteoPipeApi
             Method: POST
             Path: /device/register-device
+
+  DeleteDeviceFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: device/
+      Handler: remove_device.lambda_handler
+      Layers:
+        - arn:aws:lambda:eu-central-1:045341403599:layer:MeteoPipeLibLambdaLayer:21
+      Role: !GetAtt MeteoPipeManagingDeviceRole.Arn
+      Events:
+        RegisterDevice:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref MeteoPipeApi
+            Method: DELETE
+            Path: /device/delete-device
+
+  ListUserDeviceFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: device/
+      Handler: list_user_devices.lambda_handler
+      Layers:
+        - arn:aws:lambda:eu-central-1:045341403599:layer:MeteoPipeLibLambdaLayer:21
+      Role: !GetAtt MeteoPipeManagingDeviceRole.Arn
+      Events:
+        RegisterDevice:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref MeteoPipeApi
+            Method: GET
+            Path: /device/list-my-device
 
   MeteoPipeManagingDeviceRole:
     Type: AWS::IAM::Role

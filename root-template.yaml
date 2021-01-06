@@ -147,7 +147,7 @@ Resources:
       KeySchema:
         - AttributeName: "deviceID"
           KeyType: "HASH"
-        - AttributeName: ""
+        - AttributeName: "location"
           KeyType: "RANGE"
       ProvisionedThroughput:
         ReadCapacityUnits: "5"

@@ -22,8 +22,7 @@ Resources:
       CodeUri: postregistration/
       Handler: execute_stepfunction.lambda_handler
       Layers:
-        - Fn::ImportValue:
-            !Sub "${AppName}-LibLambdaLayer" #need to use layer versioning enforce by AWS
+        - arn:aws:lambda:eu-central-1:045341403599:layer:MeteoPipeLibLambdaLayer:21 #need to use layer versioning enforce by AWS
       Role:
         Fn::ImportValue: !Sub "${AppName}-StepFunctionExecRole"
       Environment:
@@ -36,8 +35,7 @@ Resources:
       CodeUri: postregistration/
       Handler: register_user_DynamoDB.lambda_handler
       Layers:
-        - Fn::ImportValue:
-            !Sub "${AppName}-LibLambdaLayer" #need to use layer versioning enforce by AWS
+        - arn:aws:lambda:eu-central-1:045341403599:layer:MeteoPipeLibLambdaLayer:21 #need to use layer versioning enforce by AWS
       Role:
         Fn::ImportValue: !Sub "${AppName}-DynamoDBRole"
       Environment:
@@ -50,8 +48,7 @@ Resources:
       CodeUri: postregistration/
       Handler: create_things_group.lambda_handler
       Layers:
-        - Fn::ImportValue:
-            !Sub "${AppName}-LibLambdaLayer" #need to use layer versioning enforce by AWS
+        - arn:aws:lambda:eu-central-1:045341403599:layer:MeteoPipeLibLambdaLayer:21 #need to use layer versioning enforce by AWS
       Role:
         Fn::ImportValue: !Sub "${AppName}-AWSIoTCoreRole"
 
