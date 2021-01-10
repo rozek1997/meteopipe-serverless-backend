@@ -2,3 +2,4 @@ requests
 botocore==1.19.46
 boto3==1.16.45
 python-jose==3.2.0
+shutil

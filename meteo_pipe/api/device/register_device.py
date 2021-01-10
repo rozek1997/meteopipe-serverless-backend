@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import shutil
 import zipfile
 
 import boto3
@@ -9,7 +10,10 @@ import requests
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 DEVICE_TABLE_NAME = os.environ.get("DEVICE_TABLE")
-topic = "meteopipe-thing/{uuid}/{ThingName}"
+topics = {
+    "dataTopic": "meteopipe-thing/data/{uuid}/{ThingName}",
+    "commandTopic": "meteopipe-thing/command/{uuid}/{ThingName}"
+}
 
 iot_client = boto3.client("iot")
 # dynamo_client = boto3.client("dynamodb")
@@ -89,6 +93,13 @@ def attach_policy_to_cert(certificiate_arn: str):
     )
 
 
+def attach_cert_to_thing(thing_name: str, certificate_arn: str):
+    iot_client.attach_thing_principal(
+        thingName=thing_name,
+        principal=certificate_arn
+    )
+
+
 def create_user_config_dir():
     global CONFIG_DIR_TEMPLATE
     CONFIG_DIR_TEMPLATE = CONFIG_DIR_TEMPLATE.format(user_uuid)
@@ -128,24 +139,29 @@ def generate_cert_and_key_files(cert_and_keys: dict):
 def define_config_json(thing_name: str, endpoint: str):
     config = {
         "clientId": thing_name,
-        "endpoints": endpoint,
-        "topic": topic.format(uuid=user_uuid, ThingName=thing_name),
+        "endpoint": endpoint,
+        "topics": {
+            "dataTopic": topics["dataTopic"].format(uuid=user_uuid, ThingName=thing_name),
+            "commandTopic": topics["commandTopic"].format(uuid=user_uuid, ThingName=thing_name)
+        },
         "public_key_path": "",
         "private_key_path": "",
         "cert_path": "",
-        "ca_cert_path": ""
+        "ca_cert_path": "",
+        "location": {
+            "latitude": "",
+            "longitude": ""
+        }
 
     }
 
-    return json.dumps(config, indent=4)  # intend make json look pretty, it like prettify
+    return config
 
 
-def generate_config_file(config: str):
+def generate_config_file(config: dict):
     config_file_name = CONFIG_DIR_TEMPLATE + CONFIG_FILE_NAME
-    os.chdir(CONFIG_DIR_TEMPLATE)
-    configuration_json = json.dumps(config)
     with open(config_file_name, "w") as CONFIG_FILE:
-        CONFIG_FILE.write(configuration_json)
+        json.dump(config, CONFIG_FILE, indent=4)
 
     CONFIG_FILE.close()
 
@@ -169,6 +185,13 @@ def generate_zip_file():
     logger.info("zip for user {} generated".format(user_uuid))
 
     return generated_zip_path, zip_name
+
+
+def remove_config_dir():
+    if os.path.exists(CONFIG_DIR_TEMPLATE):
+        shutil.rmtree(CONFIG_DIR_TEMPLATE, ignore_errors=True)
+    else:
+        logger.error("Directory doesnt exist {}".format(CONFIG_DIR_TEMPLATE))
 
 
 def upload_zip_to_s3(zip_path: str, zip_name: str):
@@ -199,6 +222,7 @@ def provision_device(thing_name: str):
         attach_thing_to_thing_group(thing)
         cert_and_keys = generate_device_cert()
         attach_policy_to_cert(cert_and_keys["certificateArn"])
+        attach_cert_to_thing(thing_name=thing_complete_name, certificate_arn=cert_and_keys["certificateArn"])
     except Exception as error:
         logger.error("Cant create thing with thing name {}, error message {}".format(thing_name, error))
         answer["statusCode"] = 400
@@ -213,6 +237,7 @@ def provision_device(thing_name: str):
         generate_config_file(config_template)
         zip_path, zip_name = generate_zip_file()
         get_cert_url = upload_zip_to_s3(zip_path, zip_name)
+        remove_config_dir()
 
         answer["statusCode"] = 200
         answer["headers"] = {
@@ -227,7 +252,7 @@ def lambda_handler(event, context):
     global user_uuid
     logger.info(type(event["body"]))
     request_body = json.loads(event["body"])
-    user_uuid = request_body["uuid"]
+    user_uuid = event["requestContext"]["authorizer"]["jwt"]["claims"]["sub"]
     thing_name = request_body["thing_name"]
 
     answer = {}

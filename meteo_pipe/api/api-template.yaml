@@ -12,6 +12,9 @@ Parameters:
   AppName:
     Type: String
     Default: MeteoPipe
+  Region:
+    Type: String
+    Default: eu-central-1
 
 Resources:
   RegisterDeviceFunction:
@@ -33,7 +36,7 @@ Resources:
           Properties:
             ApiId: !Ref MeteoPipeApi
             Method: POST
-            Path: /device/register-device
+            Path: /devices
 
   DeleteDeviceFunction:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
@@ -49,7 +52,7 @@ Resources:
           Properties:
             ApiId: !Ref MeteoPipeApi
             Method: DELETE
-            Path: /device/delete-device
+            Path: /devices
 
   ListUserDeviceFunction:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
@@ -65,7 +68,7 @@ Resources:
           Properties:
             ApiId: !Ref MeteoPipeApi
             Method: GET
-            Path: /device/list-my-device
+            Path: /devices
 
   MeteoPipeManagingDeviceRole:
     Type: AWS::IAM::Role
@@ -91,7 +94,23 @@ Resources:
           Value: "meteo-pipe lambda"
 
   MeteoPipeApi:
-    Type: AWS::Serverless::HttpApi
+    Type: AWS::Serverless::Api
     Properties:
       StageName: Test
-      CorsConfiguration: True
+      Cors:
+        AllowHeaders: "*"
+        AllowMethods: "*"
+        AllowOrigin: "*"
+
+  MeteoPipeAPICognitoAuthorizer:
+    Type: AWS::ApiGatewayV2::Authorizer
+    Properties:
+      ApiId: !Ref MeteoPipeApi
+      AuthorizerType: JWT
+      IdentitySource:
+        - '$request.header.Authorization'
+      JwtConfiguration:
+        Audience:
+          - 2vjt1p8l6rrf7nopj968188fe7
+        Issuer: !Sub https://cognito-idp.eu-central-1.amazonaws.com/eu-central-1_dmnlpIx6M
+      Name: meteopipe-cognito-authorizer

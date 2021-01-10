@@ -10,15 +10,12 @@ iot_client = boto3.client("iot")
 
 
 def lambda_handler(event, context):
-    request_body = json.loads(event["body"])
-    user_uuid = request_body["uuid"]
-    thing_name = request_body["thing_name"]
+    deviceId = event["queryStringParameters"]["deviceId"]
 
-    logger.info("Request body {}".format(request_body))
-    complete_thing_name = user_uuid + "-" + thing_name
+    logger.info("Event {}".format(event))
     answer = {"headers": "Content-Type': 'application/json"}
     try:
-        delete_thing(complete_thing_name)
+        delete_thing(deviceId)
         answer["statusCode"] = 200
         answer["body"] = json.dumps({"message": "device deleted"})
     except Exception as error:

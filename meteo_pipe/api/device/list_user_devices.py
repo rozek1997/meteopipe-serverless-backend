@@ -10,12 +10,11 @@ iot_client = boto3.client("iot")
 
 
 def lambda_handler(event, context):
-    request_body = json.loads(event["body"])
-    user_uuid = request_body["uuid"]
+    logger.info("Event body {}".format(event))
+    user_uuid = event["requestContext"]["authorizer"]["jwt"]["claims"]["sub"]
 
-    logger.info("Request body {}".format(request_body))
     thing_group_name = user_uuid
-    answer = {"headers": "Content-Type': 'application/json"}
+    answer = {}
     try:
         device_list = list_user_devices(thing_group_name)
         answer["statusCode"] = 200
