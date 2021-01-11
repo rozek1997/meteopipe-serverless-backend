@@ -25,8 +25,7 @@ def lambda_handler(event, context):
     logger.info(response)
     step_function_status = response["status"]
 
-    lambda_response = None
-
+    lambda_response = {}
     if step_function_status == "SUCCEEDED":
         lambda_response["statusCode"] = 302
         lambda_response["headers"] = {"Location": "http://localhost:3000/sign-up"}

@@ -40,22 +40,22 @@ def create_thing_policy(user_uuid: str):
             {
                 "Effect": "Allow",
                 "Action": "iot:Connect",
-                "Resource": "arn:aws:iot:eu-central-1:045341403599:client/meteopipe-thing/" + user_uuid + "/${iot:Connection.Thing.ThingName}"
+                "Resource": "arn:aws:iot:eu-central-1:045341403599:client/" + user_uuid + "-*"
             },
             {
                 "Effect": "Allow",
                 "Action": "iot:Subscribe",
-                "Resource": "arn:aws:iot:eu-central-1:045341403599:topicfilter/meteopipe-thing/" + user_uuid + "/${iot:Connection.Thing.ThingName}"
+                "Resource": "arn:aws:iot:eu-central-1:045341403599:topicfilter/meteopipe-thing/command/" + user_uuid + "/${iot:Connection.Thing.ThingName}"
             },
             {
                 "Effect": "Allow",
                 "Action": "iot:Publish",
-                "Resource": "arn:aws:iot:eu-central-1:045341403599:topic/meteopipe-thing/" + user_uuid + "/${iot:Connection.Thing.ThingName}"
+                "Resource": "arn:aws:iot:eu-central-1:045341403599:topic/meteopipe-thing/data/" + user_uuid + "/${iot:Connection.Thing.ThingName}"
             },
             {
                 "Effect": "Allow",
                 "Action": "iot:Receive",
-                "Resource": "arn:aws:iot:eu-central-1:045341403599:topic/meteopipe-thing/" + user_uuid + "/${iot:Connection.Thing.ThingName}"
+                "Resource": "arn:aws:iot:eu-central-1:045341403599:topic/meteopipe-thing/command/" + user_uuid + "/${iot:Connection.Thing.ThingName}"
             }
         ]
     }
