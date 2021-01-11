@@ -1,0 +1,43 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Template for MeteoPipe iot flow
+
+Globals:
+  Function:
+    Timeout: 3
+    Runtime: python3.8
+    Environment:
+      Variables:
+        REGION: eu-central-1
+
+Parameters: #section for defining variables which i will referred later on inside this template
+  AppName:
+    Type: String
+    Default: MeteoPipe
+
+Resources:
+  MeteoPipeIotFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: mqtt/
+      Handler: iot.lambda_handler
+      Layers:
+        - arn:aws:lambda:eu-central-1:045341403599:layer:MeteoPipeLibLambdaLayer:21
+      Role:
+        Fn::ImportValue:
+          !Sub "${AppName}-DynamoDBRole"
+      Environment:
+        Variables:
+          STATUS_TABLE: MeteoPipeDeviceStatus
+          HISTORY_TABLE: MeteoPipeDeviceEventsStatus
+
+  MeteoPipeIotDataRule:
+    Type: AWS::IoT::TopicRule
+    Properties:
+      RuleName: MeteoPipeIotDataRule
+      TopicRulePayload:
+        RuleDisabled: 'false'
+        Sql: SELECT clientId() as deviceId, concat(longitude, "#", latitude) as location, timestamp() as timestamp, * FROM 'meteopipe-thing/data/#'
+        Actions:
+          - Lambda:
+              FunctionArn: !GetAtt MeteoPipeIotFunction.Arn
