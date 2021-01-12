@@ -3,6 +3,7 @@ import logging
 import os
 import shutil
 import zipfile
+from datetime import datetime
 
 import boto3
 import requests
@@ -64,8 +65,14 @@ def create_thing(thing_name: str):
     return thing
 
 
-def put_thing_to_database():
-    pass
+def put_thing_to_database(thing_name: str, cert_arn: str, cert_id: str):
+    DEVICE_TABLE.put_item(item={
+        "deviceID": thing_name,
+        "uuid": user_uuid,
+        "certId": cert_id,
+        "certArn": cert_arn,
+        "createdAt": str(datetime.now().timestamp())
+    })
 
 
 def attach_thing_to_thing_group(thing: dict):
@@ -223,6 +230,9 @@ def provision_device(thing_name: str):
         cert_and_keys = generate_device_cert()
         attach_policy_to_cert(cert_and_keys["certificateArn"])
         attach_cert_to_thing(thing_name=thing_complete_name, certificate_arn=cert_and_keys["certificateArn"])
+        # put_thing_to_database(thing_name=thing_complete_name,
+        #                       cert_arn=cert_and_keys["certificateArn"],
+        #                       cert_id=cert_and_keys["certificateId"])
     except Exception as error:
         logger.error("Cant create thing with thing name {}, error message {}".format(thing_name, error))
         answer["statusCode"] = 400

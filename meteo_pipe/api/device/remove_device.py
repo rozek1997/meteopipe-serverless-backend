@@ -15,7 +15,7 @@ def lambda_handler(event, context):
     logger.info("Event {}".format(event))
     answer = {"headers": "Content-Type': 'application/json"}
     try:
-        delete_thing(deviceId)
+        delete_thing_from_iotcore(deviceId)
         answer["statusCode"] = 200
         answer["body"] = json.dumps({"message": "device deleted"})
     except Exception as error:
@@ -28,6 +28,25 @@ def lambda_handler(event, context):
     return answer
 
 
-def delete_thing(thing_name: str):
+def delete_thing_from_iotcore(thing_name: str):
     logger.info("removing device with complete name {}".format(thing_name))
-    iot_client.delete_thing(thingName=thing_name)
+    iot_client.delete_thing_from_iotcore(thingName=thing_name)
+
+
+def get_thing_principales(thing_name: str):
+    response = iot_client.list_thing_principals(thingName=thing_name)
+    principals = response["principals"]
+
+    return principals
+
+
+def detach_cert(thingName: str, principals: []):
+    pass
+
+
+def make_cert_inactive(principals: []):
+    pass
+
+
+def delete_cert():
+    pass

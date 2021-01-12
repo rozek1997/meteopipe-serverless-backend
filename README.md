@@ -1,3 +1,42 @@
+# MeteoPipe
+
+Project under development <br/>
+Other github repo for this project:
+
+- [MeteoPipe Client](https://github.com/rozek1997/meteopipe-lib)
+- [MeteoPipe website](https://github.com/rozek1997/meteopipe)
+
+# Description
+
+This project is made for a Bachelor Degree in Computer Science on Military University of Technology in Warsaw. The
+purpose to this app is to make a monitoring tool for weather devices in the very popular topic nowadays, which is
+Internet of Things. I made this app a totally serverless app which behind the scene use a lot of AWS services. Project
+consist of folders:
+
+* /dependencies - which include requirements.txt file require for build Lambda Layer
+* /deploy-script - where I've placed deployments scripts. Behind the scene those scripts are using SAM to deploy AWS
+  services described in 4 SAM templates
+* /meteo-pipe - Where the logic for lambda is written as well as SAM templates
+  * /api - defining all lambdas which are called from API gateway
+  * /auth - for post confirmation triggers for AWS cognito which invoke StepFunction for register new user and create
+    things group in AWS IoT core for that user
+  * /iot - for rule and action in AWS Iot Core
+  
+# Technology used
+
+AWS:
+
+* CLoudFormation (or to be more specific SAM templates for deployment purpose)
+* StepFunction (to make sequence of step to register new user in AWS Iot Core, in Cognito as well as in DynamoDB
+  database)
+* AWS IoT Core (for generating cert, storing information about devices and as MQTT broker)
+* Lambdas and Lambda Layers (for app core logic. Lambda Layer consist of python libraries used by Lambdas and newest
+  version of Boto3 lib )
+* Cognito (for Authentication and Authorization purpose, generating access tokens)
+* CLoudWatch (to store logs from Lambdas)
+* DynamoDB for storing state and history of message devices
+* API gateway - for invoking lambdas as well as authorizing tokens
+
 # LambdaFunction
 
 This project contains source code and supporting files for a serverless application that you can deploy with the SAM
